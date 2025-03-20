@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3 Bar Chart</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
+        #chart {
+            display: inline-block;
+        }
+        .bar {
+            fill: steelblue;
+        }
+        .bar:hover {
+            fill: orange;
+        }
+        .tick text {
+            font-size: 12px;
+        }
+        #tooltip {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="title">United States GDP</h1>
+    <div id="chart"></div>
+    <div id="tooltip"></div>
+
+    <script>
+       fetch('https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json')
+            .then(response => response.json())
+            .then(data => {
+                const donnees = data.data;
+
+                const w = 800;
+                const h = 400;
+                const p = 60;
+
+              
+                const svg = d3.select("#chart")
+                    .append("svg")
+                    .attr("width", w + 2 * p)
+                    .attr("height", h + 2 * p);
+
+                const xScale = d3.scaleBand()
+                    .domain(donnees.map(d => d[0]))
+                    .range([p, w + p])
+                    .padding(0.1);
+
+                const yScale = d3.scaleLinear()
+                    .domain([0, d3.max(donnees, d => d[1])])
+                    .range([h + p, p]);
+
+               
+                const xAxis = d3.axisBottom(xScale)
+                    .tickValues(xScale.domain().filter((d, i) => i % Math.ceil(donnees.length / 10) === 0))
+                    .tickFormat(d => d.split("-")[0]);
+
+                const yAxis = d3.axisLeft(yScale);
+
+                svg.append("g")
+                    .attr("id", "x-axis")
+                    .attr("transform", `translate(0, ${h + p})`)
+                    .call(xAxis);
+
+                svg.append("g")
+                    .attr("id", "y-axis")
+                    .attr("transform", `translate(${p}, 0)`)
+                    .call(yAxis);
+
+               
+                const tooltip = d3.select("#tooltip");
+
+               
+                svg.selectAll(".bar")
+                    .data(donnees)
+                    .enter()
+                    .append("rect")
+                    .attr("class", "bar")
+                    .attr("x", d => xScale(d[0]))
+                    .attr("y", d => yScale(d[1]))
+                    .attr("width", xScale.bandwidth())
+                    .attr("height", d => h + p - yScale(d[1]))
+                    .attr("data-date", d => d[0])
+                    .attr("data-gdp", d => d[1])
+                    .on("mouseover", (event, d) => {
+                        tooltip.style("display", "block")
+                             .attr("id","tooltip")
+                            .style("left", `${event.pageX + 10}px`)
+                            .style("top", `${event.pageY - 30}px`)
+                            .attr("data-date", d[0])
+                            .html(`<strong>Date:</strong> ${d[0]}<br><strong>GDP:</strong> $${d[1]} Billion`);
+                    })
+                    .on("mouseout", () => tooltip.style("display", "none"));
+            });
+    </script>
+</body>
+</html>
